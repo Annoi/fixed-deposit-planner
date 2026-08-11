@@ -351,7 +351,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
       <div class="table-card">
         <div class="table-scroll">
           <table id="scheduleTable">
-            <thead><tr><th>期数</th><th>时间区间</th><th>本期存入</th><th>本期定存总额</th><th>本期利息</th><th>取出利息</th><th>累计总利息</th><th>累计存入</th><th>期初总资产</th><th>期末总资产</th></tr></thead>
+            <thead><tr><th>期数</th><th>时间区间</th><th>本期存入</th><th>本期到期本金</th><th>本期定存总额</th><th>本期利息</th><th>取出利息</th><th>累计总利息</th><th>累计存入</th><th>期初总资产</th><th>期末总资产</th></tr></thead>
             <tbody id="scheduleBody"></tbody>
           </table>
         </div>
@@ -441,6 +441,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
           endMonth: 0,
           openingAssets: bookAssets(),
           deposits: 0,
+          maturedPrincipal: 0,
           fixedDepositTotal: 0,
           interest: 0,
           withdrawn: 0,
@@ -453,6 +454,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
 
       lots.forEach((lot) => {
         if (lot.ageMonths >= v.termMonths) {
+          currentYear.maturedPrincipal += lot.principal;
           const gross = lot.principal * rate * (v.termMonths / 12);
           const tax = gross * (v.taxRate / 100);
           const net = gross - tax;
@@ -622,6 +624,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
         <td data-label="期数"><span class="period-badge">${row.index}</span>${stageBadge}</td>
         <td data-label="时间区间">${scheduleRangeLabel(row.startMonth, row.endMonth, result.values.depositFrequencyMonths)}</td>
         <td data-label="本期存入" class="${row.deposits ? 'positive' : 'muted-cell'}">${row.deposits ? `+${money(row.deposits)}` : '—'}</td>
+        <td data-label="本期到期本金" class="${row.maturedPrincipal ? '' : 'muted-cell'}">${row.maturedPrincipal ? money(row.maturedPrincipal) : '—'}</td>
         <td data-label="本期定存总额"><strong>${money(row.fixedDepositTotal)}</strong></td>
         <td data-label="本期利息" class="positive">+${money(row.interest)}${estimateBadge}</td>
         <td data-label="取出利息" class="${row.withdrawn ? '' : 'muted-cell'}">${row.withdrawn ? money(row.withdrawn) : '—'}</td>
@@ -742,10 +745,10 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
 
   function exportCsv() {
     if (!lastResult || !lastResult.years.length) return showToast('暂无可导出的明细');
-    const headers = ['期数', '时间区间', '本期存入', '本期定存总额', '本期利息', '取出利息', '累计总利息', '累计存入', '期初总资产', '期末总资产'];
+    const headers = ['期数', '时间区间', '本期存入', '本期到期本金', '本期定存总额', '本期利息', '取出利息', '累计总利息', '累计存入', '期初总资产', '期末总资产'];
     const rows = lastResult.years.map((row) => [
       row.index, scheduleRangeLabel(row.startMonth, row.endMonth, lastResult.values.depositFrequencyMonths),
-      row.deposits.toFixed(2), row.fixedDepositTotal.toFixed(2), row.interest.toFixed(2), row.withdrawn.toFixed(2),
+      row.deposits.toFixed(2), row.maturedPrincipal.toFixed(2), row.fixedDepositTotal.toFixed(2), row.interest.toFixed(2), row.withdrawn.toFixed(2),
       row.cumulativeInterest.toFixed(2), row.cumulativeInvested.toFixed(2), row.openingAssets.toFixed(2), row.endingAssets.toFixed(2)
     ]);
     const csv = '\ufeff' + [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n');
