@@ -151,6 +151,11 @@ th, td { padding: 17px 18px; border-bottom: 1px solid var(--line); text-align: r
 th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
 th { background: rgba(233,226,211,.55); color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .04em; }
 td { font-size: 14px; }
+.column-groups th { padding-top: 10px; padding-bottom: 10px; text-align: center !important; color: var(--green-2); font-size: 11px; letter-spacing: .12em; }
+.column-groups th:nth-child(2) { background: rgba(35,91,70,.08); }
+.column-groups th:nth-child(3) { background: rgba(150,108,19,.09); }
+.column-groups th:nth-child(4) { background: rgba(62,82,105,.08); }
+.column-groups th + th, .group-start { border-left: 2px solid rgba(35,91,70,.18); }
 .inline-labels tbody td::before { content: attr(data-label); display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 400; line-height: 1; letter-spacing: .05em; }
 tbody tr:hover { background: rgba(217,255,99,.08); }
 tbody tr:last-child td { border-bottom: 0; }
@@ -356,7 +361,10 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
       <div class="table-card">
         <div class="table-scroll">
           <table id="scheduleTable">
-            <thead><tr><th>期数</th><th>时间区间</th><th>本期存入</th><th>本期到期本金</th><th>本期定存总额</th><th>本期利息</th><th>取出利息</th><th>累计总利息</th><th>累计存入</th><th>期初总资产</th><th>期末总资产</th></tr></thead>
+            <thead>
+              <tr class="column-groups"><th colspan="2">期间</th><th colspan="3">存款与转存</th><th colspan="3">利息</th><th colspan="3">资产</th></tr>
+              <tr><th>期数</th><th>时间区间</th><th class="group-start">本期存入</th><th>本期到期本金</th><th>本期定存总额</th><th class="group-start">本期利息</th><th>取出利息</th><th>累计总利息</th><th class="group-start">累计存入</th><th>期初总资产</th><th>期末总资产</th></tr>
+            </thead>
             <tbody id="scheduleBody"></tbody>
           </table>
         </div>
@@ -628,13 +636,13 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
       tr.innerHTML = `
         <td data-label="期数"><span class="period-badge">${row.index}</span>${stageBadge}</td>
         <td data-label="时间区间">${scheduleRangeLabel(row.startMonth, row.endMonth, result.values.depositFrequencyMonths)}</td>
-        <td data-label="本期存入" class="${row.deposits ? 'positive' : 'muted-cell'}">${row.deposits ? `+${money(row.deposits)}` : '—'}</td>
+        <td data-label="本期存入" class="group-start ${row.deposits ? 'positive' : 'muted-cell'}">${row.deposits ? `+${money(row.deposits)}` : '—'}</td>
         <td data-label="本期到期本金" class="${row.maturedPrincipal ? '' : 'muted-cell'}">${row.maturedPrincipal ? money(row.maturedPrincipal) : '—'}</td>
         <td data-label="本期定存总额"><strong>${money(row.fixedDepositTotal)}</strong></td>
-        <td data-label="本期利息" class="positive">+${money(row.interest)}${estimateBadge}</td>
+        <td data-label="本期利息" class="positive group-start">+${money(row.interest)}${estimateBadge}</td>
         <td data-label="取出利息" class="${row.withdrawn ? '' : 'muted-cell'}">${row.withdrawn ? money(row.withdrawn) : '—'}</td>
         <td data-label="累计总利息"><strong>${money(row.cumulativeInterest)}</strong></td>
-        <td data-label="累计存入"><strong>${money(row.cumulativeInvested)}</strong></td>
+        <td data-label="累计存入" class="group-start"><strong>${money(row.cumulativeInvested)}</strong></td>
         <td data-label="期初总资产">${money(row.openingAssets)}</td>
         <td data-label="期末总资产"><strong>${money(row.endingAssets)}</strong></td>`;
       fragment.appendChild(tr);
