@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e6">
+  <title>定存规划器</title>
+  <meta name="description" content="计算定期存款按期续存、本息滚存和追加存款的长期收益。">
+  <style>
+:root {
+  --paper: #f3efe5;
+  --paper-2: #e9e2d3;
+  --ink: #18241e;
+  --muted: #6e756f;
+  --green: #173f31;
+  --green-2: #235b46;
+  --lime: #d9ff63;
+  --line: rgba(24, 36, 30, .16);
+  --white: #fffdf7;
+  --shadow: 0 18px 50px rgba(24, 36, 30, .08);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; }
+button, select { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid rgba(132, 183, 88, .55); outline-offset: 2px; }
+
+.site-header {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1440px;
+  margin: auto;
+  padding: 0 5vw;
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; font-weight: 800; letter-spacing: .03em; }
+.brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--green); color: var(--lime); font-family: serif; }
+.header-actions { display: flex; gap: 10px; }
+button { border: 0; }
+.icon-button, .primary { border-radius: 7px; padding: 12px 18px; }
+.icon-button { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+.primary { color: var(--green); background: var(--lime); font-weight: 800; }
+.compact { padding: 11px 16px; }
+
+main { max-width: 1440px; margin: auto; padding: 0 5vw 70px; }
+.hero {
+  min-height: 360px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 40px;
+  padding: 55px 0 45px;
+}
+.eyebrow { color: var(--green-2); font-size: 12px; letter-spacing: .22em; font-weight: 800; }
+h1 { margin: 12px 0 20px; font-family: Georgia, "Songti SC", serif; font-size: clamp(45px, 5.4vw, 78px); line-height: .98; letter-spacing: -.055em; font-weight: 500; }
+h1 em { color: var(--green-2); font-style: italic; }
+.hero-copy { max-width: 600px; color: var(--muted); line-height: 1.8; }
+.hero-note { align-self: end; width: 245px; border-top: 1px solid var(--ink); padding: 14px 0 5px; display: flex; gap: 20px; }
+.hero-note p { margin: 0; font-size: 13px; line-height: 1.8; }
+.note-index, .section-number { color: var(--green-2); font: italic 14px Georgia, serif; }
+
+.planner-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(380px, .85fr); gap: 18px; align-items: stretch; }
+.panel { border-radius: 12px; overflow: hidden; }
+.controls { padding: 30px; background: rgba(255, 253, 247, .62); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.results { padding: 30px; background: var(--green); color: var(--white); box-shadow: var(--shadow); }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.section-heading > div:first-child { display: flex; align-items: baseline; gap: 14px; }
+h2 { margin: 0; font: 500 25px Georgia, "Songti SC", serif; }
+.status-dot { font-size: 13px; color: var(--green-2); }
+.status-dot::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #73aa4c; box-shadow: 0 0 0 4px rgba(115, 170, 76, .12); }
+.light .section-number { color: var(--lime); }
+.light > span { color: rgba(255,255,255,.6); font-size: 14px; }
+
+.preset-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 22px; margin-bottom: 23px; border-bottom: 1px solid var(--line); }
+.preset-row > span { margin-right: 4px; font-size: 12px; color: var(--muted); }
+.chip { padding: 8px 11px; border: 1px solid var(--line); border-radius: 99px; background: transparent; color: var(--ink); font-size: 12px; }
+.chip:hover { background: var(--paper-2); }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 16px; }
+.span-2 { grid-column: span 2; }
+.field { display: grid; gap: 9px; min-width: 0; color: var(--ink); font-size: 14px; font-weight: 700; }
+.input-shell { height: 50px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); transition: border-color .2s, box-shadow .2s; }
+.input-shell:focus-within { border-color: var(--green-2); box-shadow: 0 0 0 3px rgba(35, 91, 70, .09); }
+.input-shell.large { height: 64px; }
+.input-shell.large input { font-size: 28px; font-family: Georgia, serif; }
+.input-shell b { color: var(--muted); font-weight: 500; }
+.input-shell input, .input-shell select { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); }
+.select-shell { padding-right: 8px; }
+
+.option-group { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 17px; border: 1px solid var(--line); border-radius: 8px; }
+.option-group > div:first-child { display: grid; gap: 4px; }
+.option-title { font-size: 14px; font-weight: 800; }
+.option-group small, .check-row small { color: var(--muted); font-size: 12px; }
+.segmented { display: flex; background: var(--paper-2); padding: 3px; border-radius: 6px; }
+.segmented input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented span { display: block; padding: 9px 12px; border-radius: 4px; font-size: 13px; }
+.segmented input:checked + span { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(24,36,30,.15); }
+.advanced { margin-top: 12px; border-top: 1px solid var(--line); }
+.advanced summary { padding: 17px 3px 5px; list-style: none; font-size: 14px; font-weight: 700; cursor: pointer; }
+.advanced summary::-webkit-details-marker { display: none; }
+.advanced summary::before { content: "+"; display: inline-block; width: 18px; }
+.advanced[open] summary::before { content: "−"; }
+.advanced summary span { float: right; color: var(--muted); font-size: 12px; font-weight: 400; }
+.advanced-content { display: grid; grid-template-columns: 1fr 1.5fr; align-items: end; gap: 16px; padding-top: 14px; }
+.check-row { min-height: 50px; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+.check-row input { accent-color: var(--green); width: 17px; height: 17px; }
+.check-row span { display: grid; gap: 3px; }
+
+.total-block { padding: 16px 0 28px; border-bottom: 1px solid rgba(255,255,255,.14); }
+.total-block > span { display: block; color: rgba(255,255,255,.62); font-size: 13px; letter-spacing: .08em; }
+.total-block > strong { display: block; margin: 8px 0 12px; font: 500 clamp(36px, 4vw, 58px) Georgia, serif; letter-spacing: -.04em; white-space: nowrap; }
+.gain-pill { display: inline-block; padding: 7px 10px; background: var(--lime); color: var(--green); border-radius: 99px; font-size: 13px; font-weight: 800; }
+.result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 22px 0; }
+.result-stats div { display: grid; gap: 7px; }
+.result-stats span { color: rgba(255,255,255,.55); font-size: 12px; }
+.result-stats strong { font: 500 17px Georgia, "Songti SC", serif; }
+.chart-wrap { margin-top: 8px; padding: 18px 16px 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: rgba(255,255,255,.035); }
+.chart-head { display: flex; justify-content: space-between; color: rgba(255,255,255,.75); font-size: 12px; }
+.legend { display: flex; align-items: center; gap: 5px; }
+.legend i { width: 14px; height: 2px; background: var(--lime); }
+.legend i:nth-of-type(2) { margin-left: 7px; background: rgba(255,255,255,.35); }
+canvas { display: block; width: 100%; height: 170px; margin-top: 8px; }
+.result-footnote { margin: 17px 0 0; color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.7; }
+
+.schedule-section { margin-top: 55px; }
+.schedule-heading { margin-bottom: 18px; }
+.table-tools { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 14px; }
+.inline-label-toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; cursor: pointer; }
+.inline-label-toggle input { width: 15px; height: 15px; margin: 0; accent-color: var(--green); }
+.table-filter { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.table-filter select { padding: 8px 26px 8px 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); color: var(--ink); }
+.table-card { background: rgba(255,253,247,.55); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 1180px; }
+th, td { padding: 17px 18px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+th { background: rgba(233,226,211,.55); color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+td { font-size: 14px; }
+.inline-labels tbody td::before { content: attr(data-label); display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 400; line-height: 1; letter-spacing: .05em; }
+tbody tr:hover { background: rgba(217,255,99,.08); }
+tbody tr:last-child td { border-bottom: 0; }
+.period-badge { display: inline-grid; place-items: center; min-width: 30px; height: 25px; padding: 0 7px; border-radius: 4px; background: var(--green); color: white; font-size: 11px; }
+.partial-badge { margin-left: 7px; color: #966c13; font-size: 10px; }
+.renew-badge { color: var(--green-2); border: 1px solid rgba(35, 91, 70, .22); border-radius: 99px; padding: 3px 6px; }
+.positive { color: var(--green-2); font-weight: 700; }
+.muted-cell { color: var(--muted); }
+.empty-state { padding: 50px; text-align: center; color: var(--muted); }
+.disclaimer { margin: 14px 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+footer { display: flex; justify-content: space-between; padding: 22px 5vw; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); padding: 11px 16px; border-radius: 6px; background: var(--ink); color: white; font-size: 12px; opacity: 0; pointer-events: none; transition: .25s; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 950px) {
+  .hero { min-height: 310px; }
+  .hero-note { display: none; }
+  .planner-grid { grid-template-columns: 1fr; }
+  .results { min-height: 560px; }
+}
+@media (max-width: 600px) {
+  .site-header { height: 64px; padding: 0 18px; }
+  .brand-mark { width: 31px; height: 31px; }
+  .brand { font-size: 14px; }
+  .icon-button { display: none; }
+  main { padding: 0 14px 50px; }
+  .hero { min-height: 290px; padding: 38px 5px 28px; }
+  h1 { font-size: 46px; }
+  .hero-copy { font-size: 14px; }
+  .controls, .results { padding: 22px 17px; }
+  .field-grid { gap: 16px 10px; }
+  .option-group { align-items: flex-start; flex-direction: column; }
+  .segmented { width: 100%; }
+  .segmented label { flex: 1; text-align: center; }
+  .advanced-content { grid-template-columns: 1fr; }
+  .total-block > strong { font-size: 39px; }
+  .result-stats { gap: 7px; }
+  .result-stats strong { font-size: 13px; }
+  .schedule-section { margin-top: 38px; }
+  .schedule-heading { align-items: flex-end; }
+  .table-tools { gap: 9px; }
+  footer { padding: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="定存规划器首页">
+      <span class="brand-mark" aria-hidden="true">存</span>
+      <span>定存规划器</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-button" id="resetButton" type="button" title="恢复默认参数">重置</button>
+      <button class="primary compact" id="exportButton" type="button">导出明细</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">FIXED DEPOSIT PLANNER</p>
+        <h1>让每一轮定存，<br><em>看得见</em>未来。</h1>
+        <p class="hero-copy">输入存款方案，即时查看本金、利息与每轮续存明细。所有计算均在本机完成。</p>
+      </div>
+      <div class="hero-note" aria-label="计算说明">
+        <span class="note-index">01</span>
+        <p>按定存周期计息<br><strong>支持本息自动续存</strong></p>
+      </div>
+    </section>
+
+    <section class="planner-grid">
+      <form class="panel controls" id="plannerForm" autocomplete="off">
+        <div class="section-heading">
+          <div>
+            <span class="section-number">01</span>
+            <h2>设置存款方案</h2>
+          </div>
+          <span class="status-dot">实时计算</span>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>存款周期</span>
+            <span class="input-shell select-shell">
+              <select id="depositFrequencyMonths" name="depositFrequencyMonths">
+                <option value="1" selected>每月存一次</option>
+                <option value="6">每半年存一次</option>
+                <option value="12">每年存一次</option>
+              </select>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>每次存入金额</span>
+            <span class="input-shell"><b>¥</b><input id="depositAmount" name="depositAmount" type="number" min="0" step="100" value="2000" required inputmode="decimal"></span>
+          </label>
+
+          <label class="field">
+            <span>按此周期持续存入</span>
+            <span class="input-shell"><input id="savingYears" name="savingYears" type="number" min="0.25" max="100" step="0.25" value="10" required inputmode="decimal"><b>年</b></span>
+          </label>
+
+          <label class="field">
+            <span>停止存入后继续计算</span>
+            <span class="input-shell"><input id="followYears" name="followYears" type="number" min="0" max="100" step="0.25" value="10" required inputmode="decimal"><b>年</b></span>
+          </label>
+
+          <label class="field">
+            <span>每笔定存期限</span>
+            <span class="input-shell select-shell">
+              <select id="termMonths" name="termMonths">
+                <option value="1">1 个月</option>
+                <option value="3">3 个月</option>
+                <option value="6">6 个月</option>
+                <option value="12" selected>1 年</option>
+                <option value="24">2 年</option>
+                <option value="36">3 年</option>
+                <option value="60">5 年</option>
+              </select>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>定存年利率</span>
+            <span class="input-shell"><input id="annualRate" name="annualRate" type="number" min="0" max="100" step="0.01" value="1.00" required inputmode="decimal"><b>%</b></span>
+          </label>
+        </div>
+
+        <div class="option-group">
+          <div>
+            <span class="option-title">利息如何处理</span>
+            <small>每期到期后的利息去向</small>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label="利息处理方式">
+            <label><input type="radio" name="rollover" value="principal" checked><span>本金续存</span></label>
+            <label><input type="radio" name="rollover" value="compound"><span>本息续存</span></label>
+          </div>
+        </div>
+
+        <details class="advanced">
+          <summary>更多设置 <span>利息税与未到期利息</span></summary>
+          <div class="advanced-content">
+            <label class="field">
+              <span>利息税率</span>
+              <span class="input-shell"><input id="taxRate" name="taxRate" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal"><b>%</b></span>
+            </label>
+            <label class="check-row">
+              <input id="includePartial" name="includePartial" type="checkbox">
+              <span><strong>估算规划结束时尚未到期的利息</strong><small>按已存月份和相同年利率折算；提前支取时通常不适用</small></span>
+            </label>
+          </div>
+        </details>
+      </form>
+
+      <section class="panel results" aria-live="polite">
+        <div class="section-heading light">
+          <div>
+            <span class="section-number">02</span>
+            <h2>预计结果</h2>
+          </div>
+          <span id="resultTermLabel">120 次存入</span>
+        </div>
+
+        <div class="total-block">
+          <span>期末总资产</span>
+          <strong id="finalBalance">¥0.00</strong>
+          <div class="gain-pill" id="gainPill">总收益 +¥0.00</div>
+        </div>
+
+        <div class="result-stats">
+          <div><span>累计存入</span><strong id="totalInvested">¥0.00</strong></div>
+          <div><span>税后利息</span><strong id="totalInterest">¥0.00</strong></div>
+          <div><span>累计收益率</span><strong id="returnRate">0.00%</strong></div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-head">
+            <span>资产增长</span>
+            <div class="legend"><i></i>总资产 <i></i>累计存入</div>
+          </div>
+          <canvas id="growthChart" role="img" aria-label="资产增长趋势图"></canvas>
+        </div>
+
+        <p class="result-footnote" id="resultFootnote"></p>
+      </section>
+    </section>
+
+    <section class="schedule-section">
+      <div class="section-heading schedule-heading">
+        <div>
+          <span class="section-number">03</span>
+          <h2>续存明细</h2>
+        </div>
+        <div class="table-tools">
+          <label class="inline-label-toggle"><input id="inlineLabels" type="checkbox"><span>每行显示列名</span></label>
+          <label class="table-filter">查看 <select id="rowLimit"><option value="all">全部明细</option><option value="12">前 12 期</option><option value="60">前 60 期</option></select></label>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table id="scheduleTable">
+            <thead><tr><th>期数</th><th>时间区间</th><th>本期存入</th><th>累计存入</th><th>期初总资产</th><th>本期利息</th><th>累计总利息</th><th>取出利息</th><th>期末总资产</th></tr></thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyState" hidden>请输入有效的存款参数</div>
+      </div>
+      <p class="disclaimer">计算结果仅供规划参考，不构成任何投资建议。实际利息以银行计息规则、到期日及届时挂牌利率为准。</p>
+    </section>
+  </main>
+
+  <footer><span>定存规划器</span><span>数据仅保存在你的浏览器中</span></footer>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+(function () {
+  'use strict';
+
+  const $ = (selector) => document.querySelector(selector);
+  const form = $('#plannerForm');
+  const scheduleBody = $('#scheduleBody');
+  const emptyState = $('#emptyState');
+  const STORAGE_KEY = 'fixed-deposit-planner-v5';
+  const LABELS_KEY = 'fixed-deposit-inline-labels';
+  let lastResult = null;
+  let toastTimer = null;
+
+  const defaults = {
+    depositFrequencyMonths: 1,
+    depositAmount: 2000,
+    savingYears: 10,
+    followYears: 10,
+    termMonths: 12,
+    annualRate: 1,
+    rollover: 'principal',
+    taxRate: 0,
+    includePartial: false
+  };
+
+  function readValues() {
+    const data = new FormData(form);
+    return {
+      depositFrequencyMonths: Number(data.get('depositFrequencyMonths')),
+      depositAmount: Number(data.get('depositAmount')),
+      savingYears: Number(data.get('savingYears')),
+      followYears: Number(data.get('followYears')),
+      termMonths: Number(data.get('termMonths')),
+      annualRate: Number(data.get('annualRate')),
+      rollover: data.get('rollover'),
+      taxRate: Number(data.get('taxRate') || 0),
+      includePartial: data.get('includePartial') === 'on'
+    };
+  }
+
+  function valid(v) {
+    return Number.isFinite(v.depositFrequencyMonths) && v.depositFrequencyMonths > 0 &&
+      Number.isFinite(v.depositAmount) && v.depositAmount > 0 &&
+      Number.isFinite(v.savingYears) && v.savingYears > 0 && v.savingYears <= 100 &&
+      Number.isFinite(v.followYears) && v.followYears >= 0 && v.followYears <= 100 &&
+      Number.isFinite(v.termMonths) && v.termMonths > 0 &&
+      Number.isFinite(v.annualRate) && v.annualRate >= 0 && v.annualRate <= 100 &&
+      Number.isFinite(v.taxRate) && v.taxRate >= 0 && v.taxRate <= 100;
+  }
+
+  function calculate(v) {
+    const savingMonths = Math.round(v.savingYears * 12);
+    const totalMonths = Math.round((v.savingYears + v.followYears) * 12);
+    const rate = v.annualRate / 100;
+    const taxFactor = 1 - v.taxRate / 100;
+    const lots = [];
+    const years = [];
+    const detailMonths = v.depositFrequencyMonths;
+    let cashInterest = 0;
+    let invested = 0;
+    let bookedInterest = 0;
+    let grossInterest = 0;
+    let interestTax = 0;
+    let depositCount = 0;
+    let maturityCount = 0;
+    let currentYear = null;
+
+    const principalTotal = () => lots.reduce((sum, lot) => sum + lot.principal, 0);
+    const bookAssets = () => principalTotal() + cashInterest;
+
+    for (let month = 0; month < totalMonths; month += 1) {
+      if (month % detailMonths === 0) {
+        currentYear = {
+          index: years.length + 1,
+          startMonth: month,
+          endMonth: 0,
+          openingAssets: bookAssets(),
+          deposits: 0,
+          interest: 0,
+          withdrawn: 0,
+          endingAssets: 0,
+          depositCount: 0,
+          renewOnly: month >= savingMonths,
+          includesEstimate: false
+        };
+      }
+
+      lots.forEach((lot) => {
+        if (lot.ageMonths >= v.termMonths) {
+          const gross = lot.principal * rate * (v.termMonths / 12);
+          const tax = gross * (v.taxRate / 100);
+          const net = gross - tax;
+          grossInterest += gross;
+          interestTax += tax;
+          bookedInterest += net;
+          currentYear.interest += net;
+          maturityCount += 1;
+          lot.ageMonths = 0;
+          if (v.rollover === 'compound') {
+            lot.principal += net;
+          } else {
+            cashInterest += net;
+            currentYear.withdrawn += net;
+          }
+        }
+      });
+
+      if (month < savingMonths && month % v.depositFrequencyMonths === 0) {
+        lots.push({ principal: v.depositAmount, ageMonths: 0 });
+        invested += v.depositAmount;
+        depositCount += 1;
+        currentYear.deposits += v.depositAmount;
+        currentYear.depositCount += 1;
+      }
+
+      lots.forEach((lot) => {
+        lot.ageMonths += 1;
+      });
+
+      const elapsed = month + 1;
+      if (elapsed % detailMonths === 0 || elapsed === totalMonths) {
+        currentYear.endMonth = elapsed;
+        currentYear.cumulativeInvested = invested;
+        currentYear.endingAssets = bookAssets();
+        years.push(currentYear);
+      }
+    }
+
+    let accruedInterest = 0;
+    let accruedGross = 0;
+    if (v.includePartial) {
+      lots.forEach((lot) => {
+        if (!lot.ageMonths) return;
+        const gross = lot.principal * rate * (lot.ageMonths / 12);
+        accruedGross += gross;
+        accruedInterest += gross * taxFactor;
+      });
+    }
+
+    if (years.length && accruedInterest > 0) {
+      const last = years[years.length - 1];
+      last.interest += accruedInterest;
+      last.endingAssets += accruedInterest;
+      last.includesEstimate = true;
+    }
+
+    let cumulativeInterest = 0;
+    years.forEach((year) => {
+      cumulativeInterest += year.interest;
+      year.cumulativeInterest = cumulativeInterest;
+    });
+
+    grossInterest += accruedGross;
+    interestTax += accruedGross * (v.taxRate / 100);
+    const netInterest = bookedInterest + accruedInterest;
+
+    return {
+      values: v,
+      years,
+      lots,
+      savingMonths,
+      totalMonths,
+      invested,
+      depositCount,
+      maturityCount,
+      grossInterest,
+      interestTax,
+      bookedInterest,
+      accruedInterest,
+      netInterest,
+      cashInterest,
+      finalBalance: bookAssets() + accruedInterest
+    };
+  }
+
+  const money = (value, digits = 2) => new Intl.NumberFormat('zh-CN', {
+    style: 'currency', currency: 'CNY', minimumFractionDigits: digits, maximumFractionDigits: digits
+  }).format(value).replace('CN¥', '¥');
+
+  const compactMoney = (value) => new Intl.NumberFormat('zh-CN', {
+    notation: 'compact', maximumFractionDigits: 1
+  }).format(value);
+
+  function durationLabel(months) {
+    const years = Math.floor(months / 12);
+    const rest = months - years * 12;
+    if (years && rest) return `${years}年${rest}个月`;
+    if (years) return `${years}年`;
+    return `${rest}个月`;
+  }
+
+  function pointLabel(months) {
+    if (months === 0) return '开始';
+    if (months % 12 === 0) return `第${months / 12}年`;
+    return `第${(months / 12).toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}年`;
+  }
+
+  function scheduleRangeLabel(startMonth, endMonth, frequencyMonths) {
+    if (frequencyMonths === 1) {
+      const year = Math.ceil(endMonth / 12);
+      const monthInYear = (endMonth - 1) % 12 + 1;
+      return `第${year}年：第${monthInYear}个月`;
+    }
+    if (frequencyMonths === 6 && endMonth - startMonth === 6) {
+      const year = Math.ceil(endMonth / 12);
+      const half = endMonth % 12 === 6 ? '上半年' : '下半年';
+      return `第${year}年：${half}`;
+    }
+    if (startMonth % 12 === 0 && endMonth - startMonth === 12) return `第${startMonth / 12 + 1}年`;
+    return `第${startMonth + 1}—${endMonth}个月`;
+  }
+
+  function frequencyLabel(months) {
+    return months === 1 ? '每月' : months === 6 ? '每半年' : '每年';
+  }
+
+  function render(result) {
+    lastResult = result;
+    const gain = result.finalBalance - result.invested;
+    const returnRate = result.invested ? gain / result.invested * 100 : 0;
+    $('#finalBalance').textContent = money(result.finalBalance);
+    $('#totalInvested').textContent = money(result.invested);
+    $('#totalInterest').textContent = money(result.netInterest);
+    $('#returnRate').textContent = `${returnRate.toFixed(2)}%`;
+    $('#gainPill').textContent = `总收益 +${money(Math.max(0, gain))}`;
+    $('#resultTermLabel').textContent = `${result.depositCount} 次存入 · 计算 ${durationLabel(result.totalMonths)}`;
+
+    const v = result.values;
+    const rolloverText = v.rollover === 'compound'
+      ? '每笔到期后本息一并续存'
+      : `每笔到期后本金续存，已取出利息 ${money(result.cashInterest)}`;
+    const estimateText = result.accruedInterest > 0
+      ? `；另含未到期应计利息估算 ${money(result.accruedInterest)}`
+      : (!v.includePartial && result.lots.some((lot) => lot.ageMonths > 0) ? '；未计尚未到期部分的利息' : '');
+    $('#resultFootnote').textContent = `${frequencyLabel(v.depositFrequencyMonths)}存入 ${money(v.depositAmount)}，持续 ${v.savingYears} 年；之后停止注资并继续续存 ${v.followYears} 年。${rolloverText}${estimateText}。`;
+    renderRows(result);
+    requestAnimationFrame(() => drawChart(result));
+  }
+
+  function renderRows(result) {
+    const limit = $('#rowLimit').value === 'all' ? Infinity : Number($('#rowLimit').value);
+    const rows = result.years.slice(0, limit);
+    scheduleBody.replaceChildren();
+    emptyState.hidden = rows.length > 0;
+    $('.table-scroll').hidden = rows.length === 0;
+    const fragment = document.createDocumentFragment();
+
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      const stageBadge = row.renewOnly ? '<span class="partial-badge renew-badge">仅续存</span>' : '';
+      const estimateBadge = row.includesEstimate ? '<span class="partial-badge">含未到期估算</span>' : '';
+      tr.innerHTML = `
+        <td data-label="期数"><span class="period-badge">${row.index}</span>${stageBadge}</td>
+        <td data-label="时间区间">${scheduleRangeLabel(row.startMonth, row.endMonth, result.values.depositFrequencyMonths)}</td>
+        <td data-label="本期存入" class="${row.deposits ? 'positive' : 'muted-cell'}">${row.deposits ? `+${money(row.deposits)}` : '—'}</td>
+        <td data-label="累计存入"><strong>${money(row.cumulativeInvested)}</strong></td>
+        <td data-label="期初总资产">${money(row.openingAssets)}</td>
+        <td data-label="本期利息" class="positive">+${money(row.interest)}${estimateBadge}</td>
+        <td data-label="累计总利息"><strong>${money(row.cumulativeInterest)}</strong></td>
+        <td data-label="取出利息" class="${row.withdrawn ? '' : 'muted-cell'}">${row.withdrawn ? money(row.withdrawn) : '—'}</td>
+        <td data-label="期末总资产"><strong>${money(row.endingAssets)}</strong></td>`;
+      fragment.appendChild(tr);
+    });
+    scheduleBody.appendChild(fragment);
+  }
+
+  function drawChart(result) {
+    const canvas = $('#growthChart');
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const width = rect.width;
+    const height = rect.height;
+    const pad = { top: 18, right: 8, bottom: 25, left: 47 };
+    const chartW = width - pad.left - pad.right;
+    const chartH = height - pad.top - pad.bottom;
+    const points = [{ endMonth: 0, endingAssets: 0, invested: 0 }];
+    let cumulativeInvested = 0;
+    result.years.forEach((year) => {
+      cumulativeInvested += year.deposits;
+      points.push({ endMonth: year.endMonth, endingAssets: year.endingAssets, invested: cumulativeInvested });
+    });
+    const maxValue = Math.max(1, ...points.map((p) => Math.max(p.endingAssets, p.invested))) * 1.08;
+    const maxMonth = Math.max(1, result.totalMonths);
+    const x = (month) => pad.left + month / maxMonth * chartW;
+    const y = (value) => pad.top + chartH - value / maxValue * chartH;
+
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 3; i += 1) {
+      const value = maxValue * i / 3;
+      const py = y(value);
+      ctx.strokeStyle = 'rgba(255,255,255,.09)';
+      ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(width - pad.right, py); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.42)';
+      ctx.fillText(compactMoney(value), pad.left - 7, py);
+    }
+
+    function line(key, color, lineWidth) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        const px = x(point.endMonth);
+        const py = y(point[key]);
+        if (index === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    }
+    line('invested', 'rgba(255,255,255,.35)', 1.5);
+    line('endingAssets', '#d9ff63', 2.5);
+
+    if (result.values.followYears > 0) {
+      const stopX = x(result.savingMonths);
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = 'rgba(217,255,99,.45)';
+      ctx.beginPath(); ctx.moveTo(stopX, pad.top); ctx.lineTo(stopX, pad.top + chartH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.textAlign = 'center';
+      ctx.fillText('停止存入', stopX, pad.top - 8);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,.42)';
+    [0, .5, 1].forEach((ratio) => {
+      ctx.fillText(`${Number(((result.totalMonths / 12) * ratio).toFixed(1))}年`, x(maxMonth * ratio), height - pad.bottom + 8);
+    });
+  }
+
+  function update() {
+    const values = readValues();
+    if (!valid(values)) {
+      emptyState.hidden = false;
+      $('.table-scroll').hidden = true;
+      return;
+    }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(values)); } catch (_) { /* storage may be disabled */ }
+    render(calculate(values));
+  }
+
+  function applyValues(values) {
+    Object.entries(values).forEach(([key, value]) => {
+      if (key === 'rollover') {
+        const radio = form.querySelector(`[name="rollover"][value="${value}"]`);
+        if (radio) radio.checked = true;
+      } else {
+        const input = form.elements[key];
+        if (!input) return;
+        if (input.type === 'checkbox') input.checked = Boolean(value);
+        else input.value = value;
+      }
+    });
+    update();
+  }
+
+  function showToast(message) {
+    const toast = $('#toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  function exportCsv() {
+    if (!lastResult || !lastResult.years.length) return showToast('暂无可导出的明细');
+    const headers = ['期数', '阶段', '时间区间', '本期存入', '存入笔数', '累计存入', '期初总资产', '本期税后利息', '累计总利息', '取出利息', '期末总资产', '含未到期利息估算'];
+    const rows = lastResult.years.map((row) => [
+      row.index, row.renewOnly ? '仅续存' : '持续存入', scheduleRangeLabel(row.startMonth, row.endMonth, lastResult.values.depositFrequencyMonths),
+      row.deposits.toFixed(2), row.depositCount, row.cumulativeInvested.toFixed(2), row.openingAssets.toFixed(2), row.interest.toFixed(2), row.cumulativeInterest.toFixed(2),
+      row.withdrawn.toFixed(2), row.endingAssets.toFixed(2), row.includesEstimate ? '是' : '否'
+    ]);
+    const csv = '\ufeff' + [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `定存续存明细_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('续存明细已导出');
+  }
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
+  form.addEventListener('submit', (event) => event.preventDefault());
+  $('#rowLimit').addEventListener('change', () => lastResult && renderRows(lastResult));
+  $('#inlineLabels').addEventListener('change', (event) => {
+    $('#scheduleTable').classList.toggle('inline-labels', event.target.checked);
+    try { localStorage.setItem(LABELS_KEY, event.target.checked ? '1' : '0'); } catch (_) { /* storage may be disabled */ }
+  });
+  $('#exportButton').addEventListener('click', exportCsv);
+  $('#resetButton').addEventListener('click', () => { applyValues(defaults); showToast('已恢复默认参数'); });
+  window.addEventListener('resize', () => lastResult && drawChart(lastResult));
+
+  try {
+    const showInlineLabels = localStorage.getItem(LABELS_KEY) === '1';
+    $('#inlineLabels').checked = showInlineLabels;
+    $('#scheduleTable').classList.toggle('inline-labels', showInlineLabels);
+  } catch (_) { /* storage may be disabled */ }
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    applyValues(saved && typeof saved === 'object' ? { ...defaults, ...saved } : defaults);
+  } catch (_) {
+    applyValues(defaults);
+  }
+}());
+
+  </script>
+</body>
+</html>
