@@ -351,7 +351,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
       <div class="table-card">
         <div class="table-scroll">
           <table id="scheduleTable">
-            <thead><tr><th>期数</th><th>时间区间</th><th>本期存入</th><th>累计存入</th><th>期初总资产</th><th>本期利息</th><th>累计总利息</th><th>取出利息</th><th>期末总资产</th></tr></thead>
+            <thead><tr><th>期数</th><th>时间区间</th><th>本期存入</th><th>本期定存总额</th><th>本期利息</th><th>取出利息</th><th>累计总利息</th><th>累计存入</th><th>期初总资产</th><th>期末总资产</th></tr></thead>
             <tbody id="scheduleBody"></tbody>
           </table>
         </div>
@@ -441,6 +441,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
           endMonth: 0,
           openingAssets: bookAssets(),
           deposits: 0,
+          fixedDepositTotal: 0,
           interest: 0,
           withdrawn: 0,
           endingAssets: 0,
@@ -463,7 +464,9 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
           lot.ageMonths = 0;
           if (v.rollover === 'compound') {
             lot.principal += net;
+            currentYear.fixedDepositTotal += lot.principal;
           } else {
+            currentYear.fixedDepositTotal += lot.principal;
             cashInterest += net;
             currentYear.withdrawn += net;
           }
@@ -475,6 +478,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
         invested += v.depositAmount;
         depositCount += 1;
         currentYear.deposits += v.depositAmount;
+        currentYear.fixedDepositTotal += v.depositAmount;
         currentYear.depositCount += 1;
       }
 
@@ -618,11 +622,12 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
         <td data-label="期数"><span class="period-badge">${row.index}</span>${stageBadge}</td>
         <td data-label="时间区间">${scheduleRangeLabel(row.startMonth, row.endMonth, result.values.depositFrequencyMonths)}</td>
         <td data-label="本期存入" class="${row.deposits ? 'positive' : 'muted-cell'}">${row.deposits ? `+${money(row.deposits)}` : '—'}</td>
+        <td data-label="本期定存总额"><strong>${money(row.fixedDepositTotal)}</strong></td>
+        <td data-label="本期利息" class="positive">+${money(row.interest)}${estimateBadge}</td>
+        <td data-label="取出利息" class="${row.withdrawn ? '' : 'muted-cell'}">${row.withdrawn ? money(row.withdrawn) : '—'}</td>
+        <td data-label="累计总利息"><strong>${money(row.cumulativeInterest)}</strong></td>
         <td data-label="累计存入"><strong>${money(row.cumulativeInvested)}</strong></td>
         <td data-label="期初总资产">${money(row.openingAssets)}</td>
-        <td data-label="本期利息" class="positive">+${money(row.interest)}${estimateBadge}</td>
-        <td data-label="累计总利息"><strong>${money(row.cumulativeInterest)}</strong></td>
-        <td data-label="取出利息" class="${row.withdrawn ? '' : 'muted-cell'}">${row.withdrawn ? money(row.withdrawn) : '—'}</td>
         <td data-label="期末总资产"><strong>${money(row.endingAssets)}</strong></td>`;
       fragment.appendChild(tr);
     });
@@ -737,11 +742,11 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
 
   function exportCsv() {
     if (!lastResult || !lastResult.years.length) return showToast('暂无可导出的明细');
-    const headers = ['期数', '阶段', '时间区间', '本期存入', '存入笔数', '累计存入', '期初总资产', '本期税后利息', '累计总利息', '取出利息', '期末总资产', '含未到期利息估算'];
+    const headers = ['期数', '时间区间', '本期存入', '本期定存总额', '本期利息', '取出利息', '累计总利息', '累计存入', '期初总资产', '期末总资产'];
     const rows = lastResult.years.map((row) => [
-      row.index, row.renewOnly ? '仅续存' : '持续存入', scheduleRangeLabel(row.startMonth, row.endMonth, lastResult.values.depositFrequencyMonths),
-      row.deposits.toFixed(2), row.depositCount, row.cumulativeInvested.toFixed(2), row.openingAssets.toFixed(2), row.interest.toFixed(2), row.cumulativeInterest.toFixed(2),
-      row.withdrawn.toFixed(2), row.endingAssets.toFixed(2), row.includesEstimate ? '是' : '否'
+      row.index, scheduleRangeLabel(row.startMonth, row.endMonth, lastResult.values.depositFrequencyMonths),
+      row.deposits.toFixed(2), row.fixedDepositTotal.toFixed(2), row.interest.toFixed(2), row.withdrawn.toFixed(2),
+      row.cumulativeInterest.toFixed(2), row.cumulativeInvested.toFixed(2), row.openingAssets.toFixed(2), row.endingAssets.toFixed(2)
     ]);
     const csv = '\ufeff' + [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
