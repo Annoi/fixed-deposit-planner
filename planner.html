@@ -132,7 +132,12 @@ h2 { margin: 0; font: 500 25px Georgia, "Songti SC", serif; }
 canvas { display: block; width: 100%; height: 170px; margin-top: 8px; }
 .result-footnote { margin: 17px 0 0; color: rgba(255,255,255,.55); font-size: 12px; line-height: 1.7; }
 
-.schedule-section { margin-top: 55px; }
+.schedule-section {
+  width: min(1760px, calc(100vw - 36px));
+  margin-top: 55px;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
 .schedule-heading { margin-bottom: 18px; }
 .table-tools { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 14px; }
 .inline-label-toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; cursor: pointer; }
@@ -141,7 +146,7 @@ canvas { display: block; width: 100%; height: 170px; margin-top: 8px; }
 .table-filter select { padding: 8px 26px 8px 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); color: var(--ink); }
 .table-card { background: rgba(255,253,247,.55); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .table-scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 1180px; }
+table { width: 100%; border-collapse: collapse; min-width: 1440px; }
 th, td { padding: 17px 18px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
 th { background: rgba(233,226,211,.55); color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .04em; }
@@ -184,7 +189,7 @@ footer { display: flex; justify-content: space-between; padding: 22px 5vw; borde
   .total-block > strong { font-size: 39px; }
   .result-stats { gap: 7px; }
   .result-stats strong { font-size: 13px; }
-  .schedule-section { margin-top: 38px; }
+  .schedule-section { width: 100%; margin-top: 38px; margin-left: 0; transform: none; }
   .schedule-heading { align-items: flex-end; }
   .table-tools { gap: 9px; }
   footer { padding: 18px; }
